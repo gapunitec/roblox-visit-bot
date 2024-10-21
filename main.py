@@ -14,30 +14,35 @@ async def Log(msg, exception = False):
 
 async def Main():
     cookies = await ReadOrCreateCookiesFile()
-    if cookies is not None:
+    if cookies:
         token = random.choice(cookies)
         client = await Login(token)
-        if client is not None:
+        if client:
             target = await GetTarget(client)
-            if target is not None:
+            if target:
                 await Loop(cookies, target)
 
 async def ReadOrCreateCookiesFile():
     try:
         with open("cookies.txt") as cookies:
             return cookies.read().splitlines()
+        if cookies:
+            return cookies
+        else:
+            await Log(f"The cookies.txt file is empty! {ex}", True)
+            return None
     except Exception as ex:
-        Log(f"cookies.txt not found! Exception: {ex}", True)
+        await Log(f"cookies.txt not found! Exception: {ex}", True)
         return None
 
 async def Login(token):
     try:
         client = Client(token)
         user = await client.get_authenticated_user()
-        Log(f"Logged in as {user.name}!")
+        await Log(f"Logged in as {user.name}!")
         return client
     except Exception as ex:
-        Log(f"Invalid .ROBLOSECURITY token! Exception: {ex}", True)
+        await Log(f"Invalid .ROBLOSECURITY token! Exception: {ex}", True)
         return None
     
 async def GetTarget(client: Client):
@@ -46,7 +51,7 @@ async def GetTarget(client: Client):
         place = await client.get_place(target)
         return target
     except Exception as ex:
-        Log(f"Invalid place id! Exception: {ex}", True)
+        await Log(f"Invalid place id! Exception: {ex}", True)
         return None
     
 async def Loop(cookies, target):
@@ -56,42 +61,42 @@ async def Loop(cookies, target):
             client = await Login(token)
             if client is not None:
                 response = await client.requests.session.post("https://friends.roblox.com/v1/users/1/request-friendship")
-                Log(f"X-csrf-token response headers: {response.headers}")
+                await Log(f"X-csrf-token response headers: {response.headers}")
                 client.requests.session.headers["x-csrf-token"] = response.headers["x-csrf-token"]
                 response = await client.requests.session.post("https://auth.roblox.com/v1/authentication-ticket", headers={"referer": f"https://www.roblox.com/games/{target}"})
-                Log(f"Xsrf-token response headers: {response.headers}")
+                await Log(f"Xsrf-token response headers: {response.headers}")
                 xsrfToken = response.headers["rbx-authentication-ticket"]
                 browserId = random.randint(100000, 1000000)
                 await LaunchRoblox(xsrfToken, browserId, target)
                 await SearchRoblox()
         except Exception as ex:
-            Log(f"Loop process failed! Exception: {ex}", True)
+            await Log(f"Loop process failed! Exception: {ex}", True)
 
 async def LaunchRoblox(xsrfToken, browserId, target):
     try:
         launchCommand = f"start roblox-player:1+launchmode:play+gameinfo:{xsrfToken}+launchtime:{browserId}+placelauncherurl:https%3A%2F%2Fassetgame.roblox.com%2Fgame%2FPlaceLauncher.ashx:%3Frequest%3DRequestGame%26browserTrackerId%3D{browserId}%26placeId%3D{target}%26isPlayTogetherGame%3Dfalse+browsertrackerid:{browserId}+robloxLocale:en_us+gameLocale:en_us+channel:"
-        Log(f"Launching Roblox! Xsrf-token: {xsrfToken}, browser id: {browserId}, place id: {target}.")
+        await Log(f"Launching Roblox! Xsrf-token: {xsrfToken}, browser id: {browserId}, place id: {target}.")
         subprocess.run(launchCommand, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as ex:
-        Log(f"Roblox launch failed! Exception: {ex}", True)
+        await Log(f"Roblox launch failed! Exception: {ex}", True)
 
 async def SearchRoblox():
     try:
         found = False
-        Log("Searching Roblox!")
+        await Log("Searching Roblox!")
         if not found:
             for process in psutil.process_iter(attrs=["processId", "processName"]):
                 if "RobloxPlayerBeta.exe" in process.info["processName"]:
                     found = True
-                    Log(f"Roblox found! Process id: {process.info["processId"]}")
+                    await Log(f"Roblox found! Process id: {process.info["processId"]}")
                     break
         if found:
-            Log("Roblox launch completed!")
+            await Log("Roblox launch completed!")
             time.sleep(10)
             await CleanRoblox()
             found = False
     except Exception as ex:
-        Log(f"Roblox search failed! Exception: {ex}", True)
+        await Log(f"Roblox search failed! Exception: {ex}", True)
 
 async def CleanRoblox():
     try:
@@ -113,7 +118,7 @@ async def CleanRoblox():
             "del /S /Q %systemdrive%\\Users\\%username%\\AppData\\Local\\Microsoft\\CLR_v4.0_32\\UsageLogs\\*",
             "del /S /Q %systemdrive%\\Users\\%username%\\AppData\\Local\\Microsoft\\CLR_v4.0\\UsageLogs\\*"
         ]
-        Log("Start cleaning!")
+        await Log("Start cleaning!")
         await Execute(kill_commands)
         await Execute(delete_commands)
     except Exception as ex:
@@ -124,6 +129,6 @@ async def Execute(commands):
         try:
             subprocess.run(command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         except Exception as ex:
-            Log(f"Unable to execute the command! Exception: {ex}", True)
+            await Log(f"Unable to execute the command! Exception: {ex}", True)
 
 asyncio.get_event_loop().run_until_complete(Main())
