@@ -24,10 +24,10 @@ async def Main():
 
 async def ReadOrCreateCookiesFile():
     try:
-        with open("Cookies.txt") as cookies:
+        with open("cookies.txt") as cookies:
             return cookies.read().splitlines()
     except Exception as ex:
-        Log(f"Cookies.txt not found! Exception: {ex}", True)
+        Log(f"cookies.txt not found! Exception: {ex}", True)
         return None
 
 async def Login(token):
