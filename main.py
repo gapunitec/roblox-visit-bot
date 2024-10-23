@@ -122,7 +122,7 @@ async def CleanRoblox():
         await Execute(kill_commands)
         await Execute(delete_commands)
     except Exception as ex:
-        Log(f"Cleaning failed! Exception: {ex}", True)
+        await Log(f"Cleaning failed! Exception: {ex}", True)
 
 async def Execute(commands):
     for command in commands:
