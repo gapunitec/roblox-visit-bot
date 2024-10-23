@@ -20,7 +20,8 @@ async def Main():
         if client:
             target = await GetTarget(client)
             if target:
-                await Loop(cookies, target)
+                timeout = input("Timeout: ")
+                await Loop(cookies, target, timeout)
 
 async def ReadOrCreateCookiesFile():
     try:
@@ -54,7 +55,7 @@ async def GetTarget(client: Client):
         await Log(f"Invalid place id! Exception: {ex}", True)
         return None
     
-async def Loop(cookies, target):
+async def Loop(cookies, target, timeout):
     while True:
         try:
             token = random.choice(cookies)
@@ -68,7 +69,7 @@ async def Loop(cookies, target):
                 xsrfToken = response.headers["rbx-authentication-ticket"]
                 browserId = random.randint(100000, 1000000)
                 await LaunchRoblox(xsrfToken, browserId, target)
-                await SearchRoblox()
+                await SearchRoblox(timeout)
         except Exception as ex:
             await Log(f"Loop process failed! Exception: {ex}", True)
 
@@ -80,7 +81,7 @@ async def LaunchRoblox(xsrfToken, browserId, target):
     except Exception as ex:
         await Log(f"Roblox launch failed! Exception: {ex}", True)
 
-async def SearchRoblox():
+async def SearchRoblox(timeout):
     try:
         found = False
         await Log("Searching Roblox!")
@@ -92,7 +93,7 @@ async def SearchRoblox():
                     break
         if found:
             await Log("Roblox launch completed!")
-            time.sleep(10)
+            time.sleep(timeout)
             await CleanRoblox()
             found = False
     except Exception as ex:
